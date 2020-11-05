@@ -14,7 +14,7 @@ For {param} summed_var:
     - Must be consistent with {param} pattern  
     
 For {param} summed_to_var_with_equal:  
-- Enter a string containing the variable you will use to represent the end value, and equal sign, and the end value:  
+- Enter a string containing the variable you will use to represent the end value, an equal sign, and the end value:  
     - Example : "j=10"  
     - Variable must **NOT** be "m"  
     - No whitespace characters present  
