@@ -103,7 +103,7 @@ def divide(eq):
 
 def subtract(eq):
     """
-    Should never in theory be called buy itself.
+    Should never in theory be called by itself.
     Use add(eq) instead
     """
     if eq[0] == "-":
