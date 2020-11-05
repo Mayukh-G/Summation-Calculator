@@ -42,9 +42,14 @@ def operate(equation, summed_var, summed_var_val, summed_to_var, summed_to_var_v
     priority_list.reverse()
     if len(priority_list) != 0:
         for coords in priority_list:
-            len_of_backet = coords[1] - coords[0] - 1
-            to_replace = equation[coords[0]:len_of_backet+2]
-            sub_equation = equation[coords[0]+1:len_of_backet+1]
+            if (len(equation) - coords[1] - 1) == 0:
+                to_replace = equation[coords[0]:]
+            else:
+                to_replace = equation[coords[0]: -(len(equation) - coords[1] - 1)]
+            if (len(equation) - coords[1]) == 0:
+                sub_equation = equation[coords[0] + 1:]
+            else:
+                sub_equation = equation[coords[0]+1: -(len(equation) - coords[1])]
             sub_equation = add(divide(multiply(sub_equation)))
             equation = equation.replace(to_replace, sub_equation)
     return float(add(divide(multiply(equation))))
@@ -212,5 +217,5 @@ def is_char_num(char):
 #   No whitespace characters present
 #   End value must be a positive integer
 
-summation = sum(pattern="(n*7+i)+n*i", summed_var="i", summed_to_var_with_equal="n=100")
+summation = sum(pattern="1/(i*i)", summed_var="i", summed_to_var_with_equal="n=1000")
 print(summation)
