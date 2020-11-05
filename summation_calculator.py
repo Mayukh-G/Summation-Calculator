@@ -130,7 +130,6 @@ def add(eq):
     if eq.find("+-") >= 0 or eq.find("-+") >= 0:
         eq = eq.replace("+-", "-")
         eq = eq.replace("-+", "-")
-        eq = subtract(eq)
     eq = subtract(eq)
     if eq.find("+") >= 0:
         while eq.find("+") >= 0:

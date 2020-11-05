@@ -8,7 +8,7 @@ For {param} pattern:
     - Power is represented by '^' (Does not Work Yet)  
     
 For {param} summed_var:  
-- Enter the character with which you want to represent the variable that will be summed to:  
+- Enter the character with which you want to represent the variable that will be summed:  
     - Must **NOT** be 'm'  
     - Must be a single character  
     - Must be consistent with {param} pattern  
@@ -19,3 +19,4 @@ For {param} summed_to_var_with_equal:
     - Variable must **NOT** be "m"  
     - No whitespace characters present  
     - End value must be a positive integer  
+    - Must be consistent with {param} pattern  
