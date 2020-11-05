@@ -131,6 +131,7 @@ def add(eq):
         eq = eq.replace("+-", "-")
         eq = eq.replace("-+", "-")
         eq = subtract(eq)
+    eq = subtract(eq)
     if eq.find("+") >= 0:
         while eq.find("+") >= 0:
             pre_replacement_str = ""
