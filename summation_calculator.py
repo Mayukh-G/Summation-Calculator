@@ -301,7 +301,7 @@ def is_char_num(char):
 #   Enter a string that represents your equation :
 #       *Implicit multiplication is not recognized
 #       *No whitespace characters present
-#       *Power is represented by '^' (Does not Work Yet)
+#       *Power is represented by '^'
 #       *To represent a negative number's power, use this format (-x^y).
 #       *To exclude the negative use this format, -(x^y)
 # For {param} summed_var:
