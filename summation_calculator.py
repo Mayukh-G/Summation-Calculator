@@ -3,9 +3,9 @@
 # How to use located at the bottom
 
 # TODO :
-#  Make really large numbers work, those displayed with xeX
 #  Make special functions work ex: sin and cos
 #  Make special values recognized ex: pi, e
+import math
 
 
 # Starts from 1
@@ -18,18 +18,23 @@ def do_sum(pattern, summed_var, summed_to_var_with_equal):
     :param summed_to_var_with_equal: Character representing variable that is being summed to
     :return: Float answer to sum
     """
-    summed_to_var_with_equal = split(summed_to_var_with_equal)
+    summed_to_var_with_equal = to_list(summed_to_var_with_equal)
 
     summed_to_var = summed_to_var_with_equal[0]
     summed_to_value = int(find_num(summed_to_var_with_equal, 1, bool_is_left=False))
 
     total = 0
     for i in range(summed_to_value):
-        total += operate(equation=pattern,
-                         summed_var=summed_var,
-                         summed_var_val=i+1,
-                         summed_to_var=summed_to_var,
-                         summed_to_var_val=summed_to_value)
+        temp = operate(equation=pattern,
+                       summed_var=summed_var,
+                       summed_var_val=i + 1,
+                       summed_to_var=summed_to_var,
+                       summed_to_var_val=summed_to_value)
+        if str(temp) == str(math.nan):
+            temp = 0
+        total += temp
+        if total == math.inf:
+            return total
     return total
 
 
@@ -50,36 +55,68 @@ def operate(equation, summed_var, summed_var_val, summed_to_var, summed_to_var_v
     # To accomplish this the list is flipped after being created
     # element format : [start_index, end_index]
     priority_list = []
+    o_bracket = []
+    c_bracket = []
     original = equation
     equation = equation.replace(summed_var, str(summed_var_val))
     equation = equation.replace(summed_to_var, str(summed_to_var_val))
-
+    # TODO : AS of Now (x+y) + (a+z) break this priority detection. Find a fix
     while equation.find("(") >= 0 or equation.find(")") >= 0:
         start = equation.find("(")
-        end = equation.rfind(")")
-        if start == -1 or end == -1:
-            raise SyntaxError(f"Incomplete Brackets in equation : {original}")
-        elif end - start == -1:
-            raise SyntaxError(f"Empty Brackets in equation : {original}")
-        priority_list.append([start, end])
-        equation = split(equation)
+        o_bracket.append(start)
+        end = equation.find(")")
+        c_bracket.append(end)
+        equation = to_list(equation)
         equation[start] = "@"
         equation[end] = "#"
-        equation = join(equation)
+        equation = list_to_string(equation)
+
+    if len(o_bracket) != len(c_bracket):
+        raise SyntaxError(f"Incomplete Brackets in equation : {original}")
+
+    # This loop assigns the brackets to the correct corresponding closing bracket in priority_list
+    while len(o_bracket) > 1:
+        if c_bracket[0] > o_bracket[1]:
+            if c_bracket[0] - o_bracket[1] == 1:
+                raise SyntaxError(f"Empty Brackets in equation : {original}")
+            priority_list.append([o_bracket.pop(1), c_bracket.pop(0)])
+        else:
+            if c_bracket[0] - o_bracket[0] == 1:
+                raise SyntaxError(f"Empty Brackets in equation : {original}")
+            priority_list.append([o_bracket.pop(0), c_bracket.pop(0)])
+
+    if c_bracket[0] - o_bracket[0] == 1:
+        raise SyntaxError(f"Empty Brackets in equation : {original}")
+    priority_list.append([o_bracket.pop(0), c_bracket.pop(0)])
+
+    if len(o_bracket) > 0 or len(c_bracket) > 0:
+        raise Exception("Something went wrong")
+
+        # end = equation.rfind(")")
+        # if start == -1 or end == -1:
+        #     raise SyntaxError(f"Incomplete Brackets in equation : {original}")
+        # elif end - start == 1:
+        #     raise SyntaxError(f"Empty Brackets in equation : {original}")
+        # priority_list.append([start, end])
+        # equation = to_list(equation)
+        # equation[end] = "#"
+        # equation = list_to_string(equation)
 
     priority_list.reverse()
     if len(priority_list) != 0:
         for coords in priority_list:
-            if (len(equation) - coords[1] - 1) == 0:
-                to_replace = equation[coords[0]:]
-            else:
-                to_replace = equation[coords[0]: -(len(equation) - coords[1] - 1)]
-            if (len(equation) - coords[1]) == 0:
-                sub_equation = equation[coords[0] + 1:]
-            else:
-                sub_equation = equation[coords[0]+1: -(len(equation) - coords[1])]
-            sub_equation = start_and_power(eq=sub_equation)
-            equation = equation.replace(to_replace, sub_equation)
+            # because similar expressions are all replaced at once, this makes sure that a bracket is still in equation
+            if equation.count("@") != 0:
+                if (len(equation) - coords[1] - 1) == 0:
+                    to_replace = equation[coords[0]:]
+                else:
+                    to_replace = equation[coords[0]: -(len(equation) - coords[1] - 1)]
+                if (len(equation) - coords[1]) == 0:
+                    sub_equation = equation[coords[0] + 1:]
+                else:
+                    sub_equation = equation[coords[0] + 1: -(len(equation) - coords[1])]
+                sub_equation = start_and_power(eq=sub_equation)
+                equation = equation.replace(to_replace, sub_equation)
     return float(start_and_power(eq=equation))
 
 
@@ -96,21 +133,24 @@ def multiply(eq):
     :returns: Final modified string after all operations were executed
     """
     if eq.find("*") >= 0:
-        eq = eq.replace("-", "$")
+        eq = serialize(eq)
         while eq.find("*") >= 0:
             pre_replacement_str = ""
-            mult_index = eq.find("*")
-            v1 = find_num(eq, mult_index, bool_is_left=True)
+            operator_index = eq.find("*")
+            v1 = find_num(eq, operator_index, bool_is_left=True)
             pre_replacement_str += v1
 
             pre_replacement_str += "*"
 
-            v2 = find_num(eq, mult_index, bool_is_left=False)
+            v2 = find_num(eq, operator_index, bool_is_left=False)
             pre_replacement_str += v2
 
-            v1 = v1.replace("$", "-")
-            v2 = v2.replace("$", "-")
-            ans = str(float(v1) * float(v2))
+            v1 = deserialize(v1)
+            v2 = deserialize(v2)
+            try:
+                ans = str(float(v1) * float(v2))
+            except OverflowError:
+                ans = "inf"
             eq = eq.replace(pre_replacement_str, ans, 1)
 
     eq = eq.replace("$", "-")
@@ -130,21 +170,24 @@ def divide(eq):
     :returns: Final modified string after all operations were executed
     """
     if eq.find("/") >= 0:
-        eq = eq.replace("-", "$")
+        eq = serialize(eq)
         while eq.find("/") >= 0:
             pre_replacement_str = ""
-            mult_index = eq.find("/")
-            v1 = find_num(eq, mult_index, bool_is_left=True)
+            operator_index = eq.find("/")
+            v1 = find_num(eq, operator_index, bool_is_left=True)
             pre_replacement_str += v1
 
             pre_replacement_str += "/"
 
-            v2 = find_num(eq, mult_index, bool_is_left=False)
+            v2 = find_num(eq, operator_index, bool_is_left=False)
             pre_replacement_str += v2
 
-            v1 = v1.replace("$", "-")
-            v2 = v2.replace("$", "-")
-            ans = str(float(v1) / float(v2))
+            v1 = deserialize(v1)
+            v2 = deserialize(v2)
+            try:
+                ans = str(float(v1) / float(v2))
+            except OverflowError:
+                ans = "inf"
             eq = eq.replace(pre_replacement_str, ans, 1)
 
     eq = eq.replace("$", "-")
@@ -165,24 +208,32 @@ def subtract(eq):
     if eq[0] == "-":
         eq = eq.replace("-", "$", 1)
     if eq.find("-") >= 0:
+        eq = eq.replace("e+", "%")
+        eq = eq.replace("e-", "&")
+        eq = eq.replace("inf", ">")
         while eq.find("-") >= 0:
             pre_replacement_str = ""
-            mult_index = eq.find("-")
-            v1 = find_num(eq, mult_index, bool_is_left=True)
+            operator_index = eq.find("-")
+            v1 = find_num(eq, operator_index, bool_is_left=True)
             pre_replacement_str += v1
-            v1 = v1.replace("$", "-")
 
             pre_replacement_str += "-"
 
-            v2 = find_num(eq, mult_index, bool_is_left=False)
+            v2 = find_num(eq, operator_index, bool_is_left=False)
             pre_replacement_str += v2
-            v2 = v2.replace("$", "-")
 
-            ans = str(float(v1) - float(v2))
+            v1 = deserialize(v1)
+            v2 = deserialize(v2)
+            try:
+                ans = str(float(v1) - float(v2))
+            except OverflowError:
+                ans = "inf"
             eq = eq.replace(pre_replacement_str, ans, 1)
             if float(ans) < 0:
                 eq = eq.replace("-", "$", 1)
+            eq = eq.replace("e-", "&")
 
+    eq = eq.replace("&", "e-")
     eq = eq.replace("$", "-")
     return eq
 
@@ -204,22 +255,29 @@ def add(eq):
         eq = eq.replace("-+", "-")
     eq = subtract(eq)
     if eq.find("+") >= 0:
+        eq = serialize(eq)
         while eq.find("+") >= 0:
             pre_replacement_str = ""
-            mult_index = eq.find("+")
-            v1 = find_num(eq, mult_index, bool_is_left=True)
+            operator_index = eq.find("+")
+            v1 = find_num(eq, operator_index, bool_is_left=True)
             pre_replacement_str += v1
-            v1 = v1.replace("$", "-")
 
             pre_replacement_str += "+"
 
-            v2 = find_num(eq, mult_index, bool_is_left=False)
+            v2 = find_num(eq, operator_index, bool_is_left=False)
             pre_replacement_str += v2
-            v2 = v2.replace("$", "-")
 
-            ans = str(float(v1) + float(v2))
+            v1 = deserialize(v1)
+            v2 = deserialize(v2)
+            try:
+                ans = str(float(v1) + float(v2))
+            except OverflowError:
+                ans = "inf"
             eq = eq.replace(pre_replacement_str, ans, 1)
 
+            eq = eq.replace("e+", "%")
+
+    eq = eq.replace("%", "e+")
     eq = eq.replace("$", "-")
     return eq
 
@@ -235,32 +293,35 @@ def start_and_power(eq):
         :returns: Final modified string after all operations were executed
     """
     if eq.find("^") >= 0:
-        eq = eq.replace("-", "$")
+        eq = serialize(eq)
         while eq.find("^") >= 0:
             pre_replacement_str = ""
-            mult_index = eq.find("^")
-            v1 = find_num(eq, mult_index, bool_is_left=True)
+            operator_index = eq.find("^")
+            v1 = find_num(eq, operator_index, bool_is_left=True)
             pre_replacement_str += v1
-            v1 = v1.replace("$", "-")
 
             pre_replacement_str += "^"
 
-            v2 = find_num(eq, mult_index, bool_is_left=False)
+            v2 = find_num(eq, operator_index, bool_is_left=False)
             pre_replacement_str += v2
-            v2 = v2.replace("$", "-")
 
-            ans = str(pow(float(v1), float(v2)))
+            v1 = deserialize(v1)
+            v2 = deserialize(v2)
+            try:
+                ans = str(pow(float(v1), float(v2)))
+            except OverflowError:
+                ans = "inf"
             eq = eq.replace(pre_replacement_str, ans, 1)
 
     eq = eq.replace("$", "-")
     return multiply(eq)
 
 
-def split(string):
+def to_list(string):
     return [char for char in string]
 
 
-def join(list_char):
+def list_to_string(list_char):
     string = ""
     for char in list_char:
         string += char
@@ -275,25 +336,43 @@ def find_num(eq, index_of_operator, bool_is_left):
                 num_s += eq[index_of_operator - x - 1]
             else:
                 break
-        num_s = split(num_s)
+        num_s = to_list(num_s)
         num_s.reverse()
 
     else:
-        for x in range(len(eq)-index_of_operator-1):
+        for x in range(len(eq) - index_of_operator - 1):
             if is_char_num(eq[index_of_operator + x + 1]):
                 num_s += eq[index_of_operator + x + 1]
             else:
                 break
 
-    return join(num_s)
+    return list_to_string(num_s)
 
 
 def is_char_num(char):
-    nums = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "$"]
+    # non number chars aside for '.' are replacement characters
+    # $ = -, % = e+, & = e-, > = inf
+    nums = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "$", "%", "&", ">"]
     for num in nums:
         if char == num:
             return True
     return False
+
+
+def deserialize(eq):
+    eq = eq.replace("$", "-")
+    eq = eq.replace("%", "e+")
+    eq = eq.replace("&", "e-")
+    eq = eq.replace(">", "inf")
+    return eq
+
+
+def serialize(eq):
+    eq = eq.replace("-", "$")
+    eq = eq.replace("e+", "%")
+    eq = eq.replace("e-", "&")
+    eq = eq.replace("inf", ">")
+    return eq
 
 
 # HOW TO USE:
@@ -314,5 +393,6 @@ def is_char_num(char):
 #   No whitespace characters present
 #   End value must be a positive integer
 
-summation = do_sum(pattern="(i/n)()*2^i", summed_var="i", summed_to_var_with_equal="n=2")
+
+summation = do_sum(pattern="-(i^i)+(i^i)", summed_var="i", summed_to_var_with_equal="n=10000")
 print(summation)
