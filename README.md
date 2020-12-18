@@ -19,4 +19,6 @@ For {param} summed_to_var_with_equal:
     - Example : "j=10"   
     - No whitespace characters present  
     - End value must be a positive integer  
-    - Must be consistent with {param} pattern  
+    - Must be consistent with {param} pattern
+    
+Note : Does not use the built in eval()
