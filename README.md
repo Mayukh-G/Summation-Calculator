@@ -22,3 +22,4 @@ For {param} summed_to_var_with_equal:
     - Must be consistent with {param} pattern 
 
 Note : Does not use the built in eval() 
+
